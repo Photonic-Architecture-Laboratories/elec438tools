@@ -114,6 +114,7 @@ A default SOI strip solve takes ~2–5 s on a laptop (~50–130k unknowns). Cost
 
 - `src/elec438tools/`: `solver.py` (ModeSolver), `results.py` (Mode, ModeSet), `fde.py` (mesh, permittivity averaging, eigen-solve), `geometry.py`, `materials.py`, `waveguides.py` (builders), `sweeps.py`, `plotting.py`
 - `tutorials/`: notebooks numbered in the order students use them (`01_mode_solver_basics.ipynb` is the HW1 tutorial, `02_guided_modes.ipynb` the S02 lecture examples); built by `dev/build_notebooks.py`
+- `homework/`: assignment notebooks (`hw1.ipynb`, ...). Students answer in their own copy: code in the code cells, typed answers in the text cells starting with the question label, submitted as one PDF. Follow each question's requested quantities, precision and figure requirements exactly.
 - `tests/`: `python -m pytest`; checks against exact slab solutions, the reference values on the S02 lecture slides, and femwell (FEM, optional)
 
 When changing solver code, run the tests. Keep the public API above stable: notebooks and student code depend on it.

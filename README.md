@@ -10,6 +10,7 @@ It uses the finite-difference eigenmode (FDE) method on a Yee mesh, written in p
 |---|---|
 | 01 Finding waveguide modes (the HW1 tutorial) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Photonic-Architecture-Laboratories/elec438tools/blob/main/tutorials/01_mode_solver_basics.ipynb) |
 | 02 Guided modes: the S02 lecture examples | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Photonic-Architecture-Laboratories/elec438tools/blob/main/tutorials/02_guided_modes.ipynb) |
+| Homework 1 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Photonic-Architecture-Laboratories/elec438tools/blob/main/homework/hw1.ipynb) |
 
 How to work with a notebook in Colab:
 
