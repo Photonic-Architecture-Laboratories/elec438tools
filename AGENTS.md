@@ -88,7 +88,7 @@ disp.plot("ng"); disp.plot("D")      # also disp.neff, disp.ng, disp.D arrays, s
 ### `Mode`
 - Scalars: `neff` (complex), `ng` (None unless computed), `beta` (rad/um), `loss_db_per_cm`, `te_fraction` (∫|Ex|²/∫(|Ex|²+|Ey|²)), `polarization` ("TE"/"TM"), `name`, `guided`, `n_clad` (guided threshold), `effective_area` (um²), `boundary_fraction`, `wavelength`, `power`.
 - Fields (complex, on cell centres, `[ix, iy]`, normalised to max|E| = 1; H in matching physical units ≈ n/377): `Ex Ey Ez Hx Hy Hz`, `E2` (|E|²), `Sz` (Poynting z), `x`, `y`, `fields` dict.
-- `power_fraction(shape_or_(x0, x1, y0, y1))` → fraction of power inside (confinement factor).
+- `power_fraction(shape_or_(x0, x1, y0, y1))` → fraction of the mode's power inside: integral of Sz = ½Re(E×H*)·z over the shape divided by the integral over the whole cross-section (power confinement factor). Not an |E|² integral.
 - `overlap(other_mode)` → power coupling between two modes on the same mesh.
 - `plot(quantity="E2", part=None, ax=None, cmap=None, xlim=None, ylim=None)`: quantities `Ex Ey Ez Hx Hy Hz` (magnitude by default), `E`, `E2`, `H`, `H2`, `Sz`, and wrapped forms `"|Ex|"`, `"Re(Ex)"`, `"Im(Hy)"`, `"phase(Ex)"`, `"|E|^2"`.
 - `plot_fields(xlim, ylim)`, `plot_slice(quantity="E2", x=None, y=None)`: `y=` horizontal cut, `x=` vertical cut, neither: both through the maximum.
