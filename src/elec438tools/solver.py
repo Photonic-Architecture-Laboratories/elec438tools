@@ -19,10 +19,11 @@ class ModeSolver:
 
     Parameters
     ----------
-    x_span, y_span : size of the solver region (um). x_span=None makes a 1D problem:
-        the structure is invariant along x (a slab), and only y is meshed.
-    dx, dy : mesh cell size (um). dy defaults to dx. Refine locally with add_mesh_override().
-    x_center, y_center : centre of the region (um).
+    region_width, region_height : size of the solver region (um), along x and y.
+        region_width=None makes a 1D problem: the structure is invariant along x (a slab),
+        and only y is meshed.
+    dx, dy : mesh cell size (um). dy defaults to dx. Refine locally with refine_mesh().
+    center : (x, y) of the centre of the region (um).
     background : material filling everything no structure covers (the cladding).
     boundary : "metal" (perfect electric conductor on all four sides). Fields must decay
         before reaching it, so keep the walls >= ~1 um away from any high-index core.
@@ -30,28 +31,28 @@ class ModeSolver:
 
     Example
     -------
-    >>> sim = ModeSolver(x_span=3, y_span=3, dx=0.02, background="SiO2")
+    >>> sim = ModeSolver(region_width=3, region_height=3, dx=0.02, background="SiO2")
     >>> sim.add(Rect(width=0.5, height=0.22, material="Si"))
     >>> modes = sim.solve(wavelength=1.55, num_modes=4)
     >>> print(modes); modes[0].plot("E2")
     """
 
-    def __init__(self, x_span: float | None, y_span: float, dx: float = 0.02, dy: float | None = None,
-                 x_center: float = 0.0, y_center: float = 0.0, background="air", boundary: str = "metal",
-                 subpixel: int = 4):
+    def __init__(self, region_width: float | None, region_height: float, dx: float = 0.02,
+                 dy: float | None = None, center: tuple[float, float] = (0.0, 0.0), background="air",
+                 boundary: str = "metal", subpixel: int = 4):
         if boundary != "metal":
             raise ValueError("Only boundary='metal' is available for now.")
-        if x_span is not None and x_span <= 0 or y_span <= 0:
-            raise ValueError("x_span and y_span must be positive (um).")
-        self.x_span, self.y_span = x_span, y_span
+        if region_width is not None and region_width <= 0 or region_height <= 0:
+            raise ValueError("region_width and region_height must be positive (um).")
+        self.region_width, self.region_height = region_width, region_height
         self.dx = float(dx)
         self.dy = float(dy if dy is not None else dx)
-        self.x_center, self.y_center = float(x_center), float(y_center)
+        self.center = (float(center[0]), float(center[1]))
         self.background = get_material(background)
         self.boundary = boundary
         self.subpixel = int(subpixel)
         self.structures: list[Shape] = []
-        self.mesh_overrides: list[tuple] = []
+        self.refinements: list[tuple] = []
         self._bc = {"xmin": "pec", "xmax": "pec", "ymin": "pec", "ymax": "pec"}
         self._n_pml = 0
         self._axes = None
@@ -66,21 +67,21 @@ class ModeSolver:
         self._axes = None
         return shapes[0] if len(shapes) == 1 else shapes
 
-    def add_mesh_override(self, x_min: float, x_max: float, y_min: float, y_max: float,
+    def refine_mesh(self, x_min: float, x_max: float, y_min: float, y_max: float,
                           dx: float, dy: float | None = None):
         """Use a finer mesh (dx, dy) inside a box, graded smoothly into the default mesh outside."""
-        self.mesh_overrides.append((x_min, x_max, y_min, y_max, float(dx), float(dy if dy is not None else dx)))
+        self.refinements.append((x_min, x_max, y_min, y_max, float(dx), float(dy if dy is not None else dx)))
         self._axes = None
 
     @property
     def axes(self):
         if self._axes is None:
-            ox = [(a, b, d) for a, b, _, _, d, _ in self.mesh_overrides]
-            oy = [(c, e, d) for _, _, c, e, _, d in self.mesh_overrides]
+            ox = [(a, b, d) for a, b, _, _, d, _ in self.refinements]
+            oy = [(c, e, d) for _, _, c, e, _, d in self.refinements]
             bx, by = self._breakpoints()
-            ax = fde.make_axis(self.x_span, self.x_center, self.dx, ox, self._bc["xmin"], self._bc["xmax"],
+            ax = fde.make_axis(self.region_width, self.center[0], self.dx, ox, self._bc["xmin"], self._bc["xmax"],
                                self._n_pml, bx)
-            ay = fde.make_axis(self.y_span, self.y_center, self.dy, oy, self._bc["ymin"], self._bc["ymax"],
+            ay = fde.make_axis(self.region_height, self.center[1], self.dy, oy, self._bc["ymin"], self._bc["ymax"],
                                self._n_pml, by)
             self._axes = (ax, ay)
         return self._axes
@@ -134,17 +135,17 @@ class ModeSolver:
         h = max(ay.h.max(), 0 if ax.uniform else ax.h.max())
         if h > wavelength / (8 * n_max):
             warnings.warn(f"Mesh cells up to {h*1e3:.0f} nm are coarse for n = {n_max:.2f} at {wavelength} um "
-                          f"(aim for <= {wavelength/(10*n_max)*1e3:.0f} nm, or use add_mesh_override around the core).",
+                          f"(aim for <= {wavelength/(10*n_max)*1e3:.0f} nm, or use refine_mesh around the core).",
                           stacklevel=3)
         if 2 * ax.N * ay.N > 400_000:
             warnings.warn(f"{2*ax.N*ay.N} unknowns: this solve will be slow and memory-hungry. "
-                          "Use a coarser default mesh plus add_mesh_override() around the core.", stacklevel=3)
+                          "Use a coarser default mesh plus refine_mesh() around the core.", stacklevel=3)
         return n_max
 
     def _raw(self, wavelength, num_modes, n_guess, bend_radius):
         ax, ay = self.axes
         eps = fde.averaged_eps(self.structures, self.background, wavelength, ax, ay, self.subpixel,
-                               bend_radius=bend_radius, bend_x=self.x_center)
+                               bend_radius=bend_radius, bend_x=self.center[0])
         return fde.solve(ax, ay, eps, wavelength, num_modes, n_guess)
 
     def solve(self, wavelength: float = 1.55, num_modes: int = 6, n_guess: float | None = None,
@@ -157,8 +158,8 @@ class ModeSolver:
         num_modes : number of modes to return.
         n_guess : search near this effective index.
         bend_radius : bend radius in um (conformal transformation); the centre of curvature is
-            at x = x_center - bend_radius, so the mode shifts towards +x. neff is referred to
-            the radius at x_center. Radiation loss of bends is not computed with metal walls.
+            at x = center[0] - bend_radius, so the mode shifts towards +x. neff is referred to
+            the radius at center[0]. Radiation loss of bends is not computed with metal walls.
         group_index : also compute ng = neff - wavelength * dneff/dwavelength for each mode
             (two extra solves at wavelength * (1 +- 1e-3)).
 
@@ -196,7 +197,7 @@ class ModeSolver:
         n = self.index(wavelength).real
         ax, ay = self.axes
         if bend_radius:
-            n = n * (1 + (ax.centers[:, None] - self.x_center) / bend_radius)
+            n = n * (1 + (ax.centers[:, None] - self.center[0]) / bend_radius)
             edges = [n[0, :], n[-1, :], n[:, 0], n[:, -1]]
             return float(max(e.max() for e in edges))
         levels = [n[:, 0].max(), n[:, -1].max()]
@@ -225,8 +226,8 @@ class ModeSolver:
         return wavelength_sweep(self, wavelengths, num_modes, n_guess)
 
     def __repr__(self):
-        xs = "invariant" if self.x_span is None else f"{self.x_span} um"
-        return (f"ModeSolver(x_span={xs}, y_span={self.y_span} um, background={self.background.name}, "
+        xs = "invariant" if self.region_width is None else f"{self.region_width} um"
+        return (f"ModeSolver(region_width={xs}, region_height={self.region_height} um, background={self.background.name}, "
                 f"{len(self.structures)} structures; {self.mesh_info()})")
 
 

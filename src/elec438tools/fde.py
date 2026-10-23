@@ -19,7 +19,7 @@ import scipy.sparse as sp
 from scipy.sparse.linalg import LinearOperator, eigs, splu
 
 Z0 = 376.730313668  # free-space impedance (ohm)
-GRADING = 0.2  # mesh-override grading: spacing grows by ~20 % per cell away from an override
+GRADING = 0.2  # mesh refinement grading: spacing grows by ~20 % per cell away from a refined box
 PML_ORDER = 3
 PML_REFLECTION = 1e-8
 
@@ -74,7 +74,7 @@ class Axis:
 
 
 def _graded_edges(lo, hi, d, overrides, breakpoints=()):
-    """Cell edges from lo to hi with default spacing d, refined inside override intervals.
+    """Cell edges from lo to hi with default spacing d, refined inside the refinement intervals.
 
     Every breakpoint (a material interface) becomes a cell edge: the
     tangential E nodes then sit on the interface and the averaging is exact for flat faces.

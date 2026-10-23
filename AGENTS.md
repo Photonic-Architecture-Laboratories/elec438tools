@@ -31,10 +31,10 @@ te0.plot_fields()                    # 2x3 panel |Ex| |Ey| |Ez| / |Hx| |Hy| |Hz|
 te0.plot_slice("Ex")                 # line cuts through the field maximum
 
 # 2. Any cross-section by hand
-sim = et.ModeSolver(x_span=3.0, y_span=3.0, y_center=0.11, dx=0.02, background="SiO2")
+sim = et.ModeSolver(region_width=3.0, region_height=3.0, center=(0, 0.11), dx=0.02, background="SiO2")
 sim.add(et.Layer(-np.inf, 0.0, "SiO2"))                            # substrate
 core = sim.add(et.Rect(width=0.5, height=0.22, x=0, y=0.11, material="Si"))
-sim.add_mesh_override(x_min=-0.35, x_max=0.35, y_min=-0.1, y_max=0.32, dx=0.01)
+sim.refine_mesh(x_min=-0.35, x_max=0.35, y_min=-0.1, y_max=0.32, dx=0.01)
 sim.plot_index()                     # ALWAYS check geometry before solving
 modes = sim.solve(1.55, num_modes=4, group_index=True)
 
@@ -64,21 +64,21 @@ disp.plot("ng"); disp.plot("D")      # also disp.neff, disp.ng, disp.D arrays, s
 | `Material(n)` / `Material(lambda wl: ..., name=...)` | constant or wavelength-dependent index; `et.Si.n(1.55)` returns the index |
 
 ### Builders (return a ready `ModeSolver`; walls 1.5 um from the core by default)
-- `strip_waveguide(width=0.5, height=0.22, core="Si", substrate="SiO2", cladding="SiO2", sidewall_angle=90, x_span=None, y_span=None, dx=0.02, fine_dx=0.01)`
+- `strip_waveguide(width=0.5, height=0.22, core="Si", substrate="SiO2", cladding="SiO2", sidewall_angle=90, region_width=None, region_height=None, dx=0.02, fine_dx=0.01)`
 - `rib_waveguide(width=0.5, height=0.22, slab_height=0.09, ...)`: ridge on a partially etched slab
 - `slot_waveguide(rail_width=0.175, gap=0.15, height=0.22, ..., fine_dx=0.005)`
 - `coupled_waveguides(width=0.5, gap=0.2, height=0.22, ...)`: directional-coupler cross-section; even/odd supermodes are `modes["TE0"]`, `modes["TE1"]`; coupling length `wl / (2 * (n_even - n_odd))`
-- `slab_waveguide(thickness=0.22, core="Si", substrate="SiO2", cladding="SiO2", y_span=None, dy=0.005)`: 1D, invariant in x
+- `slab_waveguide(thickness=0.22, core="Si", substrate="SiO2", cladding="SiO2", region_height=None, dy=0.005)`: 1D, invariant in x
 
 `fine_dx` is the mesh inside a box 0.1 um around the core; `dx` elsewhere; `fine_dx=None` gives a uniform mesh.
 
-### `ModeSolver(x_span, y_span, dx=0.02, dy=None, x_center=0, y_center=0, background="air", boundary="metal", subpixel=4)`
-- `x_span=None` → 1D problem (invariant in x).
-- `.add(*shapes)`, `.add_mesh_override(x_min, x_max, y_min, y_max, dx, dy=None)`
+### `ModeSolver(region_width, region_height, dx=0.02, dy=None, center=(0, 0), background="air", boundary="metal", subpixel=4)`
+- `region_width=None` → 1D problem (invariant in x).
+- `.add(*shapes)`, `.refine_mesh(x_min, x_max, y_min, y_max, dx, dy=None)`
 - `.plot_index(wavelength=1.55, show_mesh=False, xlim=None, ylim=None)`, `.index(wavelength)` → n array `[ix, iy]`, `.x`, `.y`, `.mesh_info()`
 - `.solve(wavelength=1.55, num_modes=6, n_guess=None, bend_radius=None, group_index=False)` → `ModeSet`
   - `n_guess`: search near this neff (default: highest index present → fundamental first).
-  - `bend_radius` (um): conformal transformation; centre of curvature at x = x_center − R; the mode shifts to +x. Gives neff and shape only (no bend loss with metal walls). Make `x_span` large enough.
+  - `bend_radius` (um): conformal transformation; centre of curvature at x = center[0] − R; the mode shifts to +x. Gives neff and shape only (no bend loss with metal walls). Make `region_width` large enough.
   - `group_index=True`: fills `mode.ng` (2 extra solves).
 - `.wavelength_sweep(wavelengths, num_modes=2, n_guess=None)` → `DispersionResult`
 
@@ -102,13 +102,13 @@ disp.plot("ng"); disp.plot("D")      # also disp.neff, disp.ng, disp.D arrays, s
 
 1. **Plot the index** (`sim.plot_index()`) and confirm the geometry.
 2. **Guided?** Use only modes with `mode.guided == True`; modes below `n_clad` are modes of the metal box, not of the waveguide. `n_clad` is the highest cladding index at the region's edges; where a slab runs into a side wall (rib waveguides) it is that slab mode's effective index, so rib modes below it (they leak sideways into the slab) count as not guided.
-3. **Walls far enough?** The solver warns when a guided mode has > 1 % of its field next to a wall; enlarge `x_span`/`y_span`. Weakly guided modes near cutoff need the most room.
+3. **Walls far enough?** The solver warns when a guided mode has > 1 % of its field next to a wall; enlarge `region_width`/`region_height`. Weakly guided modes near cutoff need the most room.
 4. **Mesh converged?** Halve `fine_dx` (or `dx`) and confirm neff changes less than the precision you report. Typical: 10 nm in the core gives neff to ~1e-3 for SOI; 5 nm to ~3e-4.
 5. **Polarization labels** come from `te_fraction`; near a TE/TM crossing in a width sweep the modes hybridise and labels can swap. Look at the fields.
 
 ## Performance
 
-A default SOI strip solve takes ~2–5 s on a laptop (~50–130k unknowns). Cost grows quickly with mesh size: prefer a coarse `dx` with a fine `fine_dx`/mesh override over a uniformly fine mesh; use `dx=0.04, fine_dx=0.02` for quick exploration and refine for final numbers. Sweeps solve once per point (three times with `group_index=True`).
+A default SOI strip solve takes ~2–5 s on a laptop (~50–130k unknowns). Cost grows quickly with mesh size: prefer a coarse `dx` with a fine `fine_dx` (or `refine_mesh`) around the core over a uniformly fine mesh; use `dx=0.04, fine_dx=0.02` for quick exploration and refine for final numbers. Sweeps solve once per point (three times with `group_index=True`).
 
 ## Repository layout
 

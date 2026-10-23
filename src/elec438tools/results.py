@@ -22,7 +22,7 @@ class Mode:
     neff : complex effective index (Im > 0 means loss).
     name : "TE0", "TM0", "TE1", ... for guided modes; "" for modes that are not guided.
     polarization : "TE" if most transverse E is along x (te_fraction >= 0.5), else "TM".
-    te_fraction : integral |Ex|^2 / integral (|Ex|^2 + |Ey|^2)  (the "TE polarization fraction").
+    te_fraction : integral |Ex|^2 / integral (|Ex|^2 + |Ey|^2)  (the TE fraction).
     guided : True if Re(neff) is above n_clad: the highest cladding index at the region's edges, or,
         where a slab runs into a side wall (a rib), the effective index of that slab's mode.
     loss_db_per_cm : propagation loss from Im(neff) (0 for lossless guided modes with metal walls).
@@ -248,7 +248,7 @@ class ModeSet(list):
         for m in self:
             if m.guided and m.boundary_fraction > 1e-2:
                 warnings.warn(f"{m.name}: {100*m.boundary_fraction:.1f}% of its field is next to the metal "
-                              "boundary, so its neff is affected by the walls. Enlarge x_span / y_span.",
+                              "boundary, so its neff is affected by the walls. Enlarge region_width / region_height.",
                               stacklevel=3)
 
 

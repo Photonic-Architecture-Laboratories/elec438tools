@@ -81,14 +81,14 @@ sim.plot_index(show_mesh=True, xlim=(-0.8, 0.8), ylim=(-0.4, 0.6));'''),
 
 The solver region is surrounded by **metal walls** (perfect electric conductors). The fields of a guided mode must have decayed before they reach the walls, otherwise the walls change the answer; section 6 shows how to check this.
 
-The mesh is finer (10 nm) in a box around the core and coarser (20 nm) elsewhere: a *mesh override region*. Mesh lines always land on material interfaces."""),
+The mesh is finer (10 nm) in a box around the core and coarser (20 nm) elsewhere (`refine_mesh`). Mesh lines always land on material interfaces."""),
     ("md", """## 3. Building a cross-section yourself
 
 The builder above is a shortcut. Here is the same waveguide set up by hand, which is how you would build any other geometry. Structures are painted in the order they are added: a later one overrides an earlier one where they overlap."""),
-    ("code", '''sim = et.ModeSolver(x_span=3.5, y_span=3.2, y_center=0.11, dx=0.02, background="SiO2")
+    ("code", '''sim = et.ModeSolver(region_width=3.5, region_height=3.2, center=(0, 0.11), dx=0.02, background="SiO2")
 sim.add(et.Layer(-np.inf, 0.0, "SiO2", name="substrate"))          # everything below y = 0
 core = sim.add(et.Rect(width=0.5, height=0.22, x=0, y=0.11, material="Si", name="core"))
-sim.add_mesh_override(x_min=-0.35, x_max=0.35, y_min=-0.1, y_max=0.32, dx=0.01)
+sim.refine_mesh(x_min=-0.35, x_max=0.35, y_min=-0.1, y_max=0.32, dx=0.01)
 print(sim)'''),
     ("md", """Materials can be `"Si"`, `"SiO2"`, `"air"`, or any number (a constant refractive index, complex for loss). Si and SiO2 include their wavelength dependence (Sellmeier models), which matters for group index:"""),
     ("code", '''for wl in (1.31, 1.55):
@@ -102,7 +102,7 @@ modes'''),
 
 * **neff**: effective index. Modes are sorted from highest to lowest.
 * **loss**: propagation loss from the imaginary part of $n_\\mathrm{eff}$ (zero here: no absorbing materials).
-* **TE frac**: $\\int |E_x|^2 / \\int (|E_x|^2 + |E_y|^2)$, the *TE polarization fraction*. Above 50 % the mode is called TE-like, below it TM-like.
+* **TE frac**: $\\int |E_x|^2 / \\int (|E_x|^2 + |E_y|^2)$, the *TE fraction*. Above 50 % the mode is called TE-like, below it TM-like.
 * **Aeff**: effective area $(\\int |E|^2)^2 / \\int |E|^4$.
 * **guided**: whether $n_\\mathrm{eff}$ is above the highest index at the edge of the region (here SiO2, 1.444). A mode below it is not confined by the core; it is a mode of the metal box.
 
@@ -149,7 +149,7 @@ plt.tight_layout()'''),
     ("code", '''import warnings
 margins = [0.3, 0.5, 0.8, 1.2, 1.5, 2.0]
 for margin in margins:
-    sim_m = et.strip_waveguide(0.5, 0.22, x_span=0.5 + 2 * margin, y_span=0.22 + 2 * margin)
+    sim_m = et.strip_waveguide(0.5, 0.22, region_width=0.5 + 2 * margin, region_height=0.22 + 2 * margin)
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
         m = sim_m.solve(1.55, num_modes=3)
@@ -202,14 +202,14 @@ even.plot("Re(Ex)", ax=axs[0], xlim=(-1.2, 1.2), ylim=(-0.5, 0.7))
 odd.plot("Re(Ex)", ax=axs[1], xlim=(-1.2, 1.2), ylim=(-0.5, 0.7))
 plt.tight_layout()
 print(f"coupling length = {1.55 / (2 * (even.neff.real - odd.neff.real)):.2f} um")'''),
-    ("md", """A **1D slab** is invariant in $x$; give `x_span=None` (or use `slab_waveguide`). Its modes are pure TE ($E_x, H_y, H_z$) or pure TM ($E_y, H_x, E_z$):"""),
+    ("md", """A **1D slab** is invariant in $x$; give `region_width=None` (or use `slab_waveguide`). Its modes are pure TE ($E_x, H_y, H_z$) or pure TM ($E_y, H_x, E_z$):"""),
     ("code", '''slab = et.slab_waveguide(thickness=0.22)
 sm = slab.solve(1.55, num_modes=2, group_index=True)
 print(sm)
 sm["TE0"].plot("Ex");'''),
     ("md", r"""**Exercise 5.** Solve 220 nm thick strips of width 0.5, 1, 2 and 4 um and print the $n_\mathrm{eff}$ of TE0 for each, next to the slab's TE0 above."""),
     ("md", """A **bend** of radius $R$ can be modelled with `solve(..., bend_radius=R)`. The mode moves towards the outside of the bend. (Bend *loss* needs absorbing boundaries, which this version does not have yet, so only $n_\\mathrm{eff}$ and the mode shape are meaningful.)"""),
-    ("code", '''wide = et.strip_waveguide(0.5, 0.22, x_span=4.0)
+    ("code", '''wide = et.strip_waveguide(0.5, 0.22, region_width=4.0)
 fig, axs = plt.subplots(1, 2, figsize=(11, 3.2))
 for a, R in zip(axs, (None, 5.0)):
     m = wide.solve(1.55, num_modes=1, bend_radius=R)[0]
@@ -235,7 +235,7 @@ The two examples from the *S02 Guided Modes* slides, solved with `elec438tools`:
     ("md", """## Slab: 1 um thick, n = 1.444, uniform in x
 
 On the slides the slab fills the region in $x$, so the metal walls at $x = \\pm 1.5$ um also act on it: modes 2 to 6 have the same vertical profile as mode 1 but vary between the side walls."""),
-    ("code", '''sim = et.ModeSolver(x_span=3.0, y_span=4.0, dx=0.02, background="air")
+    ("code", '''sim = et.ModeSolver(region_width=3.0, region_height=4.0, dx=0.02, background="air")
 sim.add(et.Layer(-0.5, 0.5, 1.444))
 slab_modes = sim.solve(1.55, num_modes=8)
 slides = [1.347850, 1.322865, 1.283040, 1.244908, 1.202506, 1.102848, 1.072984]
@@ -245,7 +245,7 @@ for m, ref in zip(slab_modes, slides):
     slab_modes[k].plot_fields()
     slab_modes[k].plot_slice("Ex")'''),
     ("md", """## Rectangle: 2 x 1 um core, n = 1.444"""),
-    ("code", '''sim = et.ModeSolver(x_span=3.0, y_span=4.0, dx=0.02, background="air")
+    ("code", '''sim = et.ModeSolver(region_width=3.0, region_height=4.0, dx=0.02, background="air")
 sim.add(et.Rect(width=2.0, height=1.0, material=1.444))
 sim.plot_index()
 modes = sim.solve(1.55, num_modes=8)
