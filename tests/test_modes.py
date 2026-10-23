@@ -114,3 +114,11 @@ def test_strip_matches_femwell():
     ours = et.strip_waveguide(0.5, 0.22).solve(1.55, num_modes=2)
     assert abs(ours["TE0"].neff.real - fem[0].n_eff.real) < 1e-3
     assert abs(ours["TM0"].neff.real - fem[1].n_eff.real) < 3e-3
+
+
+def test_rib_guided_threshold_is_slab_mode_index():
+    """A rib's slab runs into the side walls: modes are guided only above the slab mode's neff."""
+    slab = et.slab_waveguide(0.09).solve(1.55, num_modes=1)["TE0"].neff.real
+    modes = et.rib_waveguide(width=0.5, height=0.22, slab_height=0.09).solve(1.55, num_modes=4)
+    assert abs(modes[0].n_clad - slab) < 5e-3
+    assert modes["TE0"].guided and modes["TE0"].neff.real > slab

@@ -23,7 +23,8 @@ class Mode:
     name : "TE0", "TM0", "TE1", ... for guided modes; "" for modes that are not guided.
     polarization : "TE" if most transverse E is along x (te_fraction >= 0.5), else "TM".
     te_fraction : integral |Ex|^2 / integral (|Ex|^2 + |Ey|^2)  (the "TE polarization fraction").
-    guided : True if Re(neff) is above the highest index at the region edge (n_clad).
+    guided : True if Re(neff) is above n_clad: the highest cladding index at the region's edges, or,
+        where a slab runs into a side wall (a rib), the effective index of that slab's mode.
     loss_db_per_cm : propagation loss from Im(neff) (0 for lossless guided modes with metal walls).
     effective_area : (integral |E|^2)^2 / integral |E|^4  in um^2 (in um for a 1D problem).
     ng : group index, if solve(..., group_index=True) or a sweep computed it; else None.
@@ -221,7 +222,7 @@ class ModeSet(list):
         head += f" {'ng':>8}" if has_ng else ""
         head += f" {'Aeff(um2)':>10} {'guided':>7}"
         lines = [f"wavelength {self.wavelength} um; guided means Re(neff) > {self[0].n_clad:.4f} "
-                 "(highest index at the region edge)" if self else "no modes", head]
+                 "(cladding index, or slab-mode index for a rib)" if self else "no modes", head]
         for m in self:
             row = f"{m.index:>3} {m.name or '-':<5} {_fmt_n(m.neff):>22} {m.loss_db_per_cm:>12.4g} {100*m.te_fraction:>7.1f}%"
             row += f" {m.ng:>8.4f}" if has_ng and m.ng is not None else (" " * 9 if has_ng else "")

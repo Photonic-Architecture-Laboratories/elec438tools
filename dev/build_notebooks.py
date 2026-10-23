@@ -53,7 +53,7 @@ TUTORIAL_01 = [
 
 This tutorial introduces `elec438tools`, the course's Python mode solver. By the end you can set up a waveguide cross-section, find its modes, read their properties, plot their fields, check that a result has converged, and compute group index and dispersion.
 
-Run the cells from top to bottom. The eight numbered **Exercises** ask you to change the code, run it, and report what you find. Write each answer in new cells directly below its exercise: your code in a code cell, and your answer typed in a text cell that starts with the exercise number."""),
+Run the cells from top to bottom. The six numbered **Exercises** ask you to change the code, run it, and report what you find. Write each answer in new cells directly below its exercise: your code in a code cell, and your answer typed in a text cell that starts with the exercise number."""),
     ("md", howto("01_mode_solver_basics.ipynb")),
     ("code", SETUP),
     ("md", r"""## 1. What a mode solver computes
@@ -155,7 +155,7 @@ for margin in margins:
         m = sim_m.solve(1.55, num_modes=3)
     names = "  ".join(f"{mode.name or '-'} {mode.neff.real:.4f}" for mode in m)
     print(f"walls {margin} um from the core:  {names}   ({len(w)} warnings)")'''),
-    ("md", r"""**Exercise 3.** Extend the region test to margins of 2.5, 3 and 4 um. How far from the core must the walls be for the $n_\mathrm{eff}$ of TE0, and of TE1, to stop changing in the 4th decimal? Explain the difference using the decay of each mode's field outside the core, $e^{-\gamma d}$ with $\gamma = k_0 \sqrt{n_\mathrm{eff}^2 - n_\mathrm{SiO_2}^2}$: give $\gamma$ for both modes (1/um, 2 decimals)."""),
+    ("md", r"""**Exercise 3.** Extend the region test to margins of 2.5 and 3 um. How far from the core must the walls be for the $n_\mathrm{eff}$ of TE0, and of TE1, to stop changing in the 4th decimal? Explain the difference using the decay of each mode's field outside the core, $e^{-\gamma d}$ with $\gamma = k_0 \sqrt{n_\mathrm{eff}^2 - n_\mathrm{SiO_2}^2}$: give $\gamma$ for both modes (1/um, 2 decimals)."""),
     ("md", r"""## 7. Wavelength dependence: group index and dispersion
 
 The **group index** sets how fast a pulse travels and how far apart the resonances of a ring are:
@@ -170,7 +170,6 @@ modes'''),
 fig, axs = plt.subplots(1, 3, figsize=(15, 3.6))
 disp.plot("neff", ax=axs[0]); disp.plot("ng", ax=axs[1]); disp.plot("D", ax=axs[2])
 plt.tight_layout()'''),
-    ("md", r"""**Exercise 4.** From `disp.wavelengths` and `disp.neff`, compute $dn_\mathrm{eff}/d\lambda$ of TE0 at 1.55 um (`np.gradient`; 1/um, 3 decimals), and from it $n_g = n_\mathrm{eff} - \lambda\, dn_\mathrm{eff}/d\lambda$ (3 decimals). Compare it with `disp.ng` and with the group index from `solve(..., group_index=True)` above. Explain in 2-3 sentences why $n_g$ is larger than $n_\mathrm{eff}$."""),
     ("md", """## 8. Sweeping a dimension
 
 `et.sweep` rebuilds and solves the waveguide for each value of a parameter. Here is the effective index of every guided mode against the core width. The dotted line is the cladding index: a mode is guided only above it, so the width where a curve meets the line is that mode's cutoff."""),
@@ -182,7 +181,7 @@ print("guided TE modes:", res.num_guided("TE"))
 print("guided TM modes:", res.num_guided("TM"))'''),
     ("md", """`res.neff_te[:, 0]` is TE0 at every width, `res.neff_te[:, 1]` is TE1, and so on (NaN where the mode is not guided). `res.to_dataframe()` gives a table you can save to CSV.
 
-**Exercise 5.** From the sweep, give the range of widths over which the waveguide has exactly one guided TE mode at 1.55 um (to the nearest 50 nm). Repeat the sweep at 1.31 um and give the range there. Explain in 1-2 sentences why the range changes with wavelength."""),
+**Exercise 4.** From the sweep, give the range of widths over which the waveguide has exactly one guided TE mode at 1.55 um (to the nearest 50 nm), and the width at which the second TE mode (TE1) first appears. Plot $|E_x|$ of TE1 at a width of 0.8 um and explain in 1-2 sentences, from its field pattern, why it needs a wider core than TE0 to be guided."""),
     ("md", """## 9. Other cross-sections
 
 The same tools work for any geometry. A few that come up in this course:"""),
@@ -203,13 +202,12 @@ even.plot("Re(Ex)", ax=axs[0], xlim=(-1.2, 1.2), ylim=(-0.5, 0.7))
 odd.plot("Re(Ex)", ax=axs[1], xlim=(-1.2, 1.2), ylim=(-0.5, 0.7))
 plt.tight_layout()
 print(f"coupling length = {1.55 / (2 * (even.neff.real - odd.neff.real)):.2f} um")'''),
-    ("md", r"""**Exercise 6.** Compute the coupling length for gaps of 0.1, 0.2, 0.3 and 0.4 um (2 decimals), and plot it against the gap with a logarithmic vertical axis. Explain the trend in 1-2 sentences in terms of how far the field of one guide reaches into the other."""),
     ("md", """A **1D slab** is invariant in $x$; give `x_span=None` (or use `slab_waveguide`). Its modes are pure TE ($E_x, H_y, H_z$) or pure TM ($E_y, H_x, E_z$):"""),
     ("code", '''slab = et.slab_waveguide(thickness=0.22)
 sm = slab.solve(1.55, num_modes=2, group_index=True)
 print(sm)
 sm["TE0"].plot("Ex");'''),
-    ("md", r"""**Exercise 7.** Compare the $n_\mathrm{eff}$ of the slab's TE0 with that of TE0 in 220 nm thick strips of width 0.5, 1, 2 and 4 um (4 decimals). Explain the trend in 1-2 sentences."""),
+    ("md", r"""**Exercise 5.** Compare the $n_\mathrm{eff}$ of the slab's TE0 with that of TE0 in 220 nm thick strips of width 0.5, 1, 2 and 4 um (4 decimals). Explain the trend in 1-2 sentences."""),
     ("md", """A **bend** of radius $R$ can be modelled with `solve(..., bend_radius=R)`. The mode moves towards the outside of the bend. (Bend *loss* needs absorbing boundaries, which this version does not have yet, so only $n_\\mathrm{eff}$ and the mode shape are meaningful.)"""),
     ("code", '''wide = et.strip_waveguide(0.5, 0.22, x_span=4.0)
 fig, axs = plt.subplots(1, 2, figsize=(11, 3.2))
@@ -218,7 +216,7 @@ for a, R in zip(axs, (None, 5.0)):
     m.plot("E2", ax=a, xlim=(-1.0, 1.0), ylim=(-0.5, 0.7))
     a.set_title(f"R = {R} um, neff = {m.neff.real:.4f}" if R else f"straight, neff = {m.neff.real:.4f}")
 plt.tight_layout()'''),
-    ("md", r"""**Exercise 8.** Replace the SiO2 cladding of the 500 nm strip with air (`et.strip_waveguide(0.5, 0.22, cladding="air")`; the substrate stays SiO2). Give $n_\mathrm{eff}$ of TE0 and TM0 with each cladding (4 decimals). Which mode changes more, and why?"""),
+    ("md", r"""**Exercise 6.** Replace the SiO2 cladding of the 500 nm strip with air (`et.strip_waveguide(0.5, 0.22, cladding="air")`; the substrate stays SiO2). Give $n_\mathrm{eff}$ of TE0 and TM0 with each cladding (4 decimals). Which mode changes more, and why?"""),
     ("md", """## 10. Saving results, and working with an AI assistant
 
 `mode.save("te0.mat")` writes the fields and properties to a `.mat` file, `mode.save("te0.npz")` to a NumPy file; `modes.to_dataframe()` and `res.to_dataframe()` give tables.

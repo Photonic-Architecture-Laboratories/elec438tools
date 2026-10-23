@@ -186,14 +186,34 @@ class ModeSolver:
         return ms
 
     def _edge_index(self, wavelength, bend_radius=None):
-        """Highest index touching the region edges: a mode is guided only above it.
-        In a bend this is the transformed index, which grows towards the outer wall."""
+        """The effective index a mode must exceed to be guided.
+
+        Top and bottom edges: the highest material index there. Left and right edges: the
+        effective index of the fundamental slab mode of the layer stack at that edge (a
+        uniform cladding gives its own index), since a mode below it leaks sideways into
+        that slab, as in a rib waveguide. In a bend the transformed material index is used,
+        which grows towards the outer wall."""
         n = self.index(wavelength).real
         ax, ay = self.axes
         if bend_radius:
             n = n * (1 + (ax.centers[:, None] - self.x_center) / bend_radius)
-        edges = [n[:, 0], n[:, -1]] if ax.uniform else [n[0, :], n[-1, :], n[:, 0], n[:, -1]]
-        return float(max(e.max() for e in edges))
+            edges = [n[0, :], n[-1, :], n[:, 0], n[:, -1]]
+            return float(max(e.max() for e in edges))
+        levels = [n[:, 0].max(), n[:, -1].max()]
+        if not ax.uniform:
+            levels += [self._slab_index(wavelength, n[0, :], ax.centers[0]),
+                       self._slab_index(wavelength, n[-1, :], ax.centers[-1])]
+        return float(max(levels))
+
+    def _slab_index(self, wavelength, column, x):
+        """Fundamental effective index of the vertical layer stack at position x."""
+        if column.max() - column.min() < 1e-9:
+            return float(column.max())
+        ax1 = fde.make_axis(None, x, 1.0, [], "pec", "pec", 0)
+        ay = self.axes[1]
+        eps = fde.averaged_eps(self.structures, self.background, wavelength, ax1, ay, self.subpixel)
+        res = fde.solve(ax1, ay, eps, wavelength, 2, column.max())
+        return float(max(neff.real for neff, _ in res))
 
     def wavelength_sweep(self, wavelengths, num_modes: int = 2, n_guess: float | None = None):
         """Solve at each wavelength and follow the first `num_modes` modes by field overlap.

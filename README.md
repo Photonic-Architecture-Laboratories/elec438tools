@@ -39,7 +39,7 @@ modes["TE0"].plot_fields()
 ```
 
 ```
-wavelength 1.55 um; guided means Re(neff) > 1.4440 (highest index at the region edge)
+wavelength 1.55 um; guided means Re(neff) > 1.4440 (cladding index, or slab-mode index for a rib)
   # name                    neff  loss(dB/cm)  TE frac       ng  Aeff(um2)  guided
   0 TE0                 2.446...            0    98.3%   4.19...     0.19     yes
   1 TM0                 1.773...            0     4.4%   3.75...     0.34     yes

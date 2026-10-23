@@ -101,7 +101,7 @@ disp.plot("ng"); disp.plot("D")      # also disp.neff, disp.ng, disp.D arrays, s
 ## Checks to run before trusting a number (tell the student when you skip one)
 
 1. **Plot the index** (`sim.plot_index()`) and confirm the geometry.
-2. **Guided?** Use only modes with `mode.guided == True`; modes below `n_clad` are modes of the metal box, not of the waveguide.
+2. **Guided?** Use only modes with `mode.guided == True`; modes below `n_clad` are modes of the metal box, not of the waveguide. `n_clad` is the highest cladding index at the region's edges; where a slab runs into a side wall (rib waveguides) it is that slab mode's effective index, so rib modes below it (they leak sideways into the slab) count as not guided.
 3. **Walls far enough?** The solver warns when a guided mode has > 1 % of its field next to a wall; enlarge `x_span`/`y_span`. Weakly guided modes near cutoff need the most room.
 4. **Mesh converged?** Halve `fine_dx` (or `dx`) and confirm neff changes less than the precision you report. Typical: 10 nm in the core gives neff to ~1e-3 for SOI; 5 nm to ~3e-4.
 5. **Polarization labels** come from `te_fraction`; near a TE/TM crossing in a width sweep the modes hybridise and labels can swap. Look at the fields.
