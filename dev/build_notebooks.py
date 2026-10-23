@@ -2,7 +2,6 @@
 
 Edit the cells here, then run:  python dev/build_notebooks.py
 Tutorials are written to tutorials/ with their outputs, so they read well on GitHub.
-Homework notebooks are written to homework/ without outputs (students fill them in).
 """
 
 import sys
@@ -54,7 +53,7 @@ TUTORIAL_01 = [
 
 This tutorial introduces `elec438tools`, the course's Python mode solver. By the end you can set up a waveguide cross-section, find its modes, read their properties, plot their fields, check that a result has converged, and compute group index and dispersion.
 
-Run the cells from top to bottom. Cells marked **Exercise** ask you to change something and explain what you see."""),
+Run the cells from top to bottom. The eight numbered **Exercises** ask you to change the code, run it, and report what you find. Write each answer in new cells directly below its exercise: your code in a code cell, and your answer typed in a text cell that starts with the exercise number."""),
     ("md", howto("01_mode_solver_basics.ipynb")),
     ("code", SETUP),
     ("md", r"""## 1. What a mode solver computes
@@ -111,8 +110,10 @@ Guided modes are named in order within each polarization: TE0, TE1, ... and TM0,
     ("code", '''te0 = modes["TE0"]
 print(te0)
 print("beta =", te0.beta, "rad/um")
-print("fraction of power in the core (confinement factor):", round(te0.power_fraction(core), 3))'''),
-    ("md", """**Exercise.** Is this 500 nm wide waveguide single-mode at 1.55 um? Which of its modes are guided, and how close is the weakest one to the cladding index?"""),
+print("fraction of power in the core:", round(te0.power_fraction(core), 3))'''),
+    ("md", r"""The fraction of power in the core (the *confinement factor*) is the integral of the Poynting vector $S_z = \tfrac{1}{2}\mathrm{Re}(\mathbf{E}\times\mathbf{H}^*)\cdot\hat{z}$ over the core, divided by its integral over the whole cross-section.
+
+**Exercise 1.** Solve the same waveguide with a width of 450 nm instead of 500 nm. List its guided modes with their $n_\mathrm{eff}$ (4 decimals). For the guided mode with the lowest $n_\mathrm{eff}$, give $n_\mathrm{eff} - n_\mathrm{SiO_2}$ (4 decimals), and explain in 1-2 sentences why such a mode is called weakly guided."""),
     ("md", """## 5. Plotting the fields
 
 `plot_fields` shows all six field components, normalised so that the largest $|E|$ is 1. The H field is in matching physical units, so it is about $n/377$ times smaller."""),
@@ -123,7 +124,7 @@ modes["TM0"].plot("E2", ax=axs[1], xlim=(-0.8, 0.8), ylim=(-0.5, 0.7))
 plt.tight_layout()'''),
     ("md", """Any single component can be plotted as a magnitude, real part, imaginary part or phase: `"Ex"`, `"|Ex|"`, `"Re(Ex)"`, `"Im(Hy)"`, `"phase(Ex)"`; and the totals `"E"`, `"E2"`, `"H"`, `"Sz"` (power flow). Line cuts through the field maximum:"""),
     ("code", '''te0.plot_slice("Ex");'''),
-    ("md", """**Exercise.** In the horizontal cut, $|E_x|$ jumps at the sidewalls ($x = \\pm 0.25$ um). Which boundary condition makes it jump, and by what factor? Check your answer against $n_\\mathrm{Si}^2 / n_\\mathrm{SiO_2}^2$. Then plot the vertical cut of $E_y$ for TM0 (`modes["TM0"].plot_slice("Ey")`) and explain where it jumps."""),
+    ("md", r"""**Exercise 2.** In the horizontal cut, $|E_x|$ jumps at the sidewalls ($x = \pm 0.25$ um). Name the boundary condition that causes the jump, and use it to predict the ratio of $|E_x|$ just outside to just inside the silicon from $n_\mathrm{Si}$ and $n_\mathrm{SiO_2}$ at 1.55 um (2 decimals). Then plot $|E_y|$ of TM0 along a vertical line through the core (`modes["TM0"].plot_slice("Ey", x=0)`), and say at which interfaces it jumps and why."""),
     ("md", """## 6. Convergence testing
 
 A mode solver's answer depends on the mesh and on the size of the region. Before trusting a number, change each of them and check that the number stops changing. This is the most important habit in simulation.
@@ -154,7 +155,7 @@ for margin in margins:
         m = sim_m.solve(1.55, num_modes=3)
     names = "  ".join(f"{mode.name or '-'} {mode.neff.real:.4f}" for mode in m)
     print(f"walls {margin} um from the core:  {names}   ({len(w)} warnings)")'''),
-    ("md", """**Exercise.** How far away must the walls be for TE0's $n_\\mathrm{eff}$ to be correct to 4 decimal places? Is the answer the same for the weakest guided mode? Explain why."""),
+    ("md", r"""**Exercise 3.** Extend the region test to margins of 2.5, 3 and 4 um. How far from the core must the walls be for the $n_\mathrm{eff}$ of TE0, and of TE1, to stop changing in the 4th decimal? Explain the difference using the decay of each mode's field outside the core, $e^{-\gamma d}$ with $\gamma = k_0 \sqrt{n_\mathrm{eff}^2 - n_\mathrm{SiO_2}^2}$: give $\gamma$ for both modes (1/um, 2 decimals)."""),
     ("md", r"""## 7. Wavelength dependence: group index and dispersion
 
 The **group index** sets how fast a pulse travels and how far apart the resonances of a ring are:
@@ -169,7 +170,7 @@ modes'''),
 fig, axs = plt.subplots(1, 3, figsize=(15, 3.6))
 disp.plot("neff", ax=axs[0]); disp.plot("ng", ax=axs[1]); disp.plot("D", ax=axs[2])
 plt.tight_layout()'''),
-    ("md", """**Exercise.** $n_\\mathrm{eff}$ falls with wavelength but $n_g$ is much larger than $n_\\mathrm{eff}$. Use the formula for $n_g$ to explain both facts."""),
+    ("md", r"""**Exercise 4.** From `disp.wavelengths` and `disp.neff`, compute $dn_\mathrm{eff}/d\lambda$ of TE0 at 1.55 um (`np.gradient`; 1/um, 3 decimals), and from it $n_g = n_\mathrm{eff} - \lambda\, dn_\mathrm{eff}/d\lambda$ (3 decimals). Compare it with `disp.ng` and with the group index from `solve(..., group_index=True)` above. Explain in 2-3 sentences why $n_g$ is larger than $n_\mathrm{eff}$."""),
     ("md", """## 8. Sweeping a dimension
 
 `et.sweep` rebuilds and solves the waveguide for each value of a parameter. Here is the effective index of every guided mode against the core width. The dotted line is the cladding index: a mode is guided only above it, so the width where a curve meets the line is that mode's cutoff."""),
@@ -181,7 +182,7 @@ print("guided TE modes:", res.num_guided("TE"))
 print("guided TM modes:", res.num_guided("TM"))'''),
     ("md", """`res.neff_te[:, 0]` is TE0 at every width, `res.neff_te[:, 1]` is TE1, and so on (NaN where the mode is not guided). `res.to_dataframe()` gives a table you can save to CSV.
 
-**Exercise.** Read the single-mode width range for TE polarisation off the plot. Then repeat the sweep at 1.31 um and compare."""),
+**Exercise 5.** From the sweep, give the range of widths over which the waveguide has exactly one guided TE mode at 1.55 um (to the nearest 50 nm). Repeat the sweep at 1.31 um and give the range there. Explain in 1-2 sentences why the range changes with wavelength."""),
     ("md", """## 9. Other cross-sections
 
 The same tools work for any geometry. A few that come up in this course:"""),
@@ -202,11 +203,13 @@ even.plot("Re(Ex)", ax=axs[0], xlim=(-1.2, 1.2), ylim=(-0.5, 0.7))
 odd.plot("Re(Ex)", ax=axs[1], xlim=(-1.2, 1.2), ylim=(-0.5, 0.7))
 plt.tight_layout()
 print(f"coupling length = {1.55 / (2 * (even.neff.real - odd.neff.real)):.2f} um")'''),
+    ("md", r"""**Exercise 6.** Compute the coupling length for gaps of 0.1, 0.2, 0.3 and 0.4 um (2 decimals), and plot it against the gap with a logarithmic vertical axis. Explain the trend in 1-2 sentences in terms of how far the field of one guide reaches into the other."""),
     ("md", """A **1D slab** is invariant in $x$; give `x_span=None` (or use `slab_waveguide`). Its modes are pure TE ($E_x, H_y, H_z$) or pure TM ($E_y, H_x, E_z$):"""),
     ("code", '''slab = et.slab_waveguide(thickness=0.22)
 sm = slab.solve(1.55, num_modes=2, group_index=True)
 print(sm)
 sm["TE0"].plot("Ex");'''),
+    ("md", r"""**Exercise 7.** Compare the $n_\mathrm{eff}$ of the slab's TE0 with that of TE0 in 220 nm thick strips of width 0.5, 1, 2 and 4 um (4 decimals). Explain the trend in 1-2 sentences."""),
     ("md", """A **bend** of radius $R$ can be modelled with `solve(..., bend_radius=R)`. The mode moves towards the outside of the bend. (Bend *loss* needs absorbing boundaries, which this version does not have yet, so only $n_\\mathrm{eff}$ and the mode shape are meaningful.)"""),
     ("code", '''wide = et.strip_waveguide(0.5, 0.22, x_span=4.0)
 fig, axs = plt.subplots(1, 2, figsize=(11, 3.2))
@@ -215,18 +218,12 @@ for a, R in zip(axs, (None, 5.0)):
     m.plot("E2", ax=a, xlim=(-1.0, 1.0), ylim=(-0.5, 0.7))
     a.set_title(f"R = {R} um, neff = {m.neff.real:.4f}" if R else f"straight, neff = {m.neff.real:.4f}")
 plt.tight_layout()'''),
+    ("md", r"""**Exercise 8.** Replace the SiO2 cladding of the 500 nm strip with air (`et.strip_waveguide(0.5, 0.22, cladding="air")`; the substrate stays SiO2). Give $n_\mathrm{eff}$ of TE0 and TM0 with each cladding (4 decimals). Which mode changes more, and why?"""),
     ("md", """## 10. Saving results, and working with an AI assistant
 
 `mode.save("te0.mat")` writes the fields and properties to a `.mat` file, `mode.save("te0.npz")` to a NumPy file; `modes.to_dataframe()` and `res.to_dataframe()` give tables.
 
-If you use an AI coding assistant, point it at `AGENTS.md` in the repository: it is a compact reference of everything in this package, written for exactly that purpose. Whatever the assistant writes, the checks in this tutorial still apply: look at the index profile, check convergence, and check that the walls are far enough away.
-
-## Exercises
-
-1. Find the TE0 and TM0 effective and group indices of a 220 nm thick slab and of the 500 x 220 nm strip at 1.55 um. Why is the strip's TE0 effective index lower than the slab's?
-2. For a 220 nm thick Si strip in SiO2, plot $n_\\mathrm{eff}$ of all guided modes against width from 0.2 to 1.5 um at 1.55 um. Mark the cutoff width of each mode.
-3. Replace the SiO2 cladding with air (`cladding="air"`). Which modes change most, and why?
-4. Repeat the convergence test of section 6 for the slot waveguide. Which mesh size do you need in the gap, and why is it smaller than for the strip?"""),
+If you use an AI coding assistant, point it at `AGENTS.md` in the repository: it is a compact reference of everything in this package, written for exactly that purpose. Whatever the assistant writes, the checks in this tutorial still apply: look at the index profile, check convergence, and check that the walls are far enough away."""),
 ]
 
 S02 = [
@@ -266,62 +263,6 @@ for name, ref in slides.items():
 ]
 
 
-HW_RULES = """## How to do and submit this homework
-
-1. Open this notebook in Colab with the button above and save your own copy: **File → Save a copy in Drive**. Work only in your copy.
-2. Work through [Tutorial 01](https://colab.research.google.com/github/%s/blob/main/tutorials/01_mode_solver_basics.ipynb) first. It shows every tool you need here; you will adapt its code, not copy outputs from it.
-3. Under each question there is a code cell for your work and a text cell for your answer. **Everything must be typed**: write equations in the text cells with LaTeX (`$v_g = d\\omega/d\\beta$`). No handwriting, photos or screenshots.
-4. Start every answer cell with its label (**Q2(b)**, ...). Give every number with its units and the precision the question asks for. Every figure needs axis labels with units and a title that names the question.
-5. Keep the code that produced each answer, and make sure the notebook runs from top to bottom (**Runtime → Restart and run all**) before you submit.
-6. Submit **one PDF** on Google Classroom: **File → Print → Save as PDF** from your completed notebook. Check that no figure or cell is cut off.
-
-You may use AI assistants to help write code. You are responsible for every number you report: check them the way Tutorial 01 does (geometry plot, guided modes only, region size, mesh), and write the explanations in your own words.""" % REPO
-
-ANSWER_CODE = "# Your code for {q}\n"
-ANSWER_MD = "**{q}** Your answer here."
-
-
-def _q(label, statement):
-    """A question: statement, an empty code cell, and an answer cell starting with the label."""
-    return [("md", statement), ("code", ANSWER_CODE.format(q=label)), ("md", ANSWER_MD.format(q=label))]
-
-
-HW1 = [
-    ("md", f"""# ELEC 438/538 Integrated Photonics Design: Homework 1
-
-{badge("hw1.ipynb", "homework")}
-
-**Due: Friday 30 October 2026, 23:59**, as one PDF on Google Classroom.
-
-This homework covers guided modes (lecture S02) and the course mode solver, `elec438tools`. Question 1 is analytical; Questions 2 and 3 use the mode solver."""),
-    ("md", HW_RULES),
-    ("code", SETUP),
-    ("md", r"""## Q1. Metal parallel-plate waveguide
-
-In class we showed that the modes of a waveguide made of two parallel metal plates filled with a medium of index $n$ obey
-
-$$\omega^2 = m^2 \omega_c^2 + \left(\frac{c}{n}\beta\right)^2 ,$$
-
-where $\beta$ is the propagation constant (the $z$ component of $\mathbf{k}$) and $m = 1, 2, \ldots$ is the mode number."""),
-    *_q("Q1(a)", r"""**Q1(a)** Derive the phase velocity $v_p = \omega/\beta$ and the group velocity $v_g = d\omega/d\beta$ of mode $m$. Evaluate the derivative with respect to $\beta$, then express both velocities as functions of $\omega$ only (no $\beta$ in the final answers). Type the derivation step by step."""),
-    *_q("Q1(b)", r"""**Q1(b)** Show that $v_p\, v_g = (c/n)^2$. Then plot $v_p/(c/n)$ and $v_g/(c/n)$ against $\omega/\omega_c$ for $m = 1, 2, 3$, for $\omega$ up to $6\,\omega_c$, in one figure. Describe in 2-3 sentences what happens to each velocity as $\omega$ approaches the cutoff of mode $m$ from above, and as $\omega \to \infty$."""),
-    ("md", r"""## Q2. The lecture example: a rectangular core
-
-Use the rectangular core from the S02 slides: a 2 um wide, 1 um tall core of index 1.444 in air, at a wavelength of 1.55 um, with metal boundaries."""),
-    *_q("Q2(a)", r"""**Q2(a)** Set up the core in a 3 um x 4 um region (as on the slides) with a 20 nm mesh, and solve for 8 modes. Show the index profile. Give a table of the first five **guided** modes with their names, $n_\mathrm{eff}$ (4 decimals) and TE fraction (%), and plot $|E|^2$ of each of the five modes. Compare your $n_\mathrm{eff}$ values with those on the slides (TE0 1.3040, TM0 1.2713, TE1 1.1766, TM1 1.1557, TE2 1.0297)."""),
-    *_q("Q2(b)", r"""**Q2(b)** The solver warns that some modes touch the walls in this region. Let the *margin* be the distance from the core to the walls on every side, so the region is $(2 + 2\,\mathrm{margin}) \times (1 + 2\,\mathrm{margin})$ um. Solve for margins from 0.5 to 3 um in steps of 0.25 um, keeping the 20 nm mesh. Plot $n_\mathrm{eff}$ of TE0, TE1 and TE2 against the margin. For each mode, give the smallest margin beyond which its $n_\mathrm{eff}$ stays within $10^{-4}$ of its value at 3 um. Explain in 2-3 sentences why the three modes need different margins."""),
-    *_q("Q2(c)", r"""**Q2(c)** With a margin of 1 um, compute $n_\mathrm{eff}$ of TE0 for mesh sizes of 40, 30, 20, 15 and 10 nm, and plot it against the mesh size. Which mesh size would you use to report $n_\mathrm{eff}$ to 4 decimals? Justify your choice from the plot. (Each halving of the mesh size makes the problem 4 times larger: the 10 nm solve takes up to a minute.)"""),
-    *_q("Q2(d)", r"""**Q2(d)** With a margin of 2 um and a 20 nm mesh, give for TE0 and TE2: $n_\mathrm{eff}$, the fraction of power inside the core (3 decimals) and the effective area (um$^2$). The fraction of power inside the core is the integral of the Poynting vector $S_z = \tfrac{1}{2}\mathrm{Re}(\mathbf{E}\times\mathbf{H}^*)\cdot\hat{z}$ over the core divided by its integral over the whole cross-section; `mode.power_fraction(core)` computes it. Which mode has more of its power outside the core? Relate this to their effective indices and to the ray picture of modes from the lecture (bounce angle), in 3-4 sentences."""),
-    ("md", r"""## Q3. A silicon strip waveguide
-
-Use a silicon strip waveguide 220 nm thick on SiO2 with SiO2 cladding (`et.strip_waveguide`), at a wavelength of 1.55 um unless stated otherwise. Use the builder's default region and mesh."""),
-    *_q("Q3(a)", r"""**Q3(a)** For a width of 450 nm, give a table of all guided modes with their names, $n_\mathrm{eff}$ (3 decimals), group index $n_g$ (3 decimals) and TE fraction (%). Plot $|E|^2$ of TE0 and TM0, zoomed in on the core."""),
-    *_q("Q3(b)", r"""**Q3(b)** For the same 450 nm waveguide, plot $|E_x|$ of TE0 along a horizontal line through the middle of the core ($y = 0.11$ um), and $|E_y|$ of TM0 along a vertical line through the middle ($x = 0$). Mark the Si/SiO2 interfaces on both plots. Using the boundary conditions at a dielectric interface, explain which field component jumps at which interface, and predict the ratio of the field just outside to just inside the silicon from the refractive indices at 1.55 um (2 decimals). Then give the fraction of power inside the silicon core for each mode (3 decimals). The fraction of power inside the core is the integral of the Poynting vector $S_z = \tfrac{1}{2}\mathrm{Re}(\mathbf{E}\times\mathbf{H}^*)\cdot\hat{z}$ over the core divided by its integral over the whole cross-section; `mode.power_fraction(core)` computes it. Explain in 3-4 sentences how the field jumps account for the difference between the two modes' power fractions and effective indices."""),
-    *_q("Q3(c)", r"""**Q3(c)** Sweep the width from 0.20 to 1.00 um in steps of 25 nm and plot $n_\mathrm{eff}$ of all guided TE and TM modes against width, with the SiO2 index as a reference line. Give the width at which TE1 becomes guided (to the nearest 25 nm) and the number of guided modes at 450 nm and at 500 nm. At 450 nm, give $n_\mathrm{eff}(\mathrm{TE1}) - n_\mathrm{SiO_2}$ and explain in 2-3 sentences whether such a mode would survive in a real chip with bends and sidewall roughness."""),
-    *_q("Q3(d)", r"""**Q3(d)** For the 450 nm waveguide, compute $n_\mathrm{eff}$ and $n_g$ of TE0 and TM0 at 11 wavelengths from 1.50 to 1.60 um, and plot both quantities against wavelength. Using $n_g = n_\mathrm{eff} - \lambda\, dn_\mathrm{eff}/d\lambda$, explain why $n_g$ is larger than $n_\mathrm{eff}$ for both modes."""),
-]
-
-
 def build(cells, name, execute=True, folder="tutorials"):
     nb = nbformat.v4.new_notebook()
     nb.metadata["kernelspec"] = {"name": "python3", "display_name": "Python 3", "language": "python"}
@@ -340,4 +281,3 @@ if __name__ == "__main__":
     execute = "--no-exec" not in sys.argv
     build(TUTORIAL_01, "01_mode_solver_basics.ipynb", execute)
     build(S02, "02_guided_modes.ipynb", execute)
-    build(HW1, "hw1.ipynb", execute=False, folder="homework")
