@@ -2,7 +2,7 @@
 
 Conventions for all builders: x = 0 is the waveguide centre and y = 0 is the top of the
 substrate (the bottom of the core). The substrate fills y < 0; the cladding is the
-background and fills everything else. Default margins put the metal walls 1.5 um from the core.
+background and fills everything else. Default margins place the metal boundaries 1.5 um from the core.
 """
 
 from __future__ import annotations
@@ -45,7 +45,7 @@ def rib_waveguide(width: float = 0.5, height: float = 0.22, slab_height: float =
                   substrate="SiO2", cladding="SiO2", region_width: float | None = None, region_height: float | None = None,
                   dx: float = 0.02, fine_dx: float | None = 0.01) -> ModeSolver:
     """Rib waveguide: a full-height ridge of `width` on a partially etched slab of `slab_height`.
-    The slab runs into the side walls, so make region_width wide enough that the mode has decayed."""
+    The slab extends to the side boundaries, so make region_width wide enough that the mode has decayed there."""
     if not 0 < slab_height < height:
         raise ValueError("Need 0 < slab_height < height.")
     sim = _solver(region_width or width + 2 * MARGIN + 1.0, region_height or height + 2 * MARGIN, height, dx, cladding)

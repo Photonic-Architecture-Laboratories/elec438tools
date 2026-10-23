@@ -79,7 +79,7 @@ print(sim)
 sim.plot_index(show_mesh=True, xlim=(-0.8, 0.8), ylim=(-0.4, 0.6));'''),
     ("md", """Always look at the index profile before solving: it is the quickest way to catch a misplaced structure.
 
-The solver region is surrounded by **metal walls** (perfect electric conductors). The fields of a guided mode must have decayed before they reach the walls, otherwise the walls change the answer; section 6 shows how to check this.
+The simulation region is bounded on all four sides by **metal boundaries** (perfect electric conductors), which force the tangential electric field to zero where they are placed. A guided mode's field must have decayed to a negligible value at the simulation boundaries; otherwise the boundaries change its $n_\\mathrm{eff}$. Section 6 shows how to check this.
 
 The mesh is finer (10 nm) in a box around the core and coarser (20 nm) elsewhere (`refine_mesh`). Mesh lines always land on material interfaces."""),
     ("md", """## 3. Building a cross-section yourself
@@ -145,7 +145,7 @@ axs[1].semilogx(dxs, neff_tm, "o-"); axs[1].set_title("TM0")
 for a in axs:
     a.set_xlabel("mesh size in the core (um)"); a.set_ylabel("neff")
 plt.tight_layout()'''),
-    ("md", """**Region size.** Move the metal walls closer and see when they start to matter. Weakly guided modes, whose fields spread far into the cladding, need the largest region. The solver warns when a guided mode has more than 1 % of its field next to a wall."""),
+    ("md", """**Region size.** Place the simulation boundaries at different distances from the core and see at which distance the $n_\\mathrm{eff}$ of each mode stops changing. Modes whose fields decay slowly into the cladding (weakly guided modes) need the simulation boundaries placed farthest from the core. The solver warns when more than 1 % of a guided mode's $|E|^2$ lies in the strip along the simulation boundaries (5 % of the region size wide)."""),
     ("code", '''import warnings
 margins = [0.3, 0.5, 0.8, 1.2, 1.5, 2.0]
 for margin in margins:
@@ -154,7 +154,7 @@ for margin in margins:
         warnings.simplefilter("always")
         m = sim_m.solve(1.55, num_modes=3)
     names = "  ".join(f"{mode.name or '-'} {mode.neff.real:.4f}" for mode in m)
-    print(f"walls {margin} um from the core:  {names}   ({len(w)} warnings)")'''),
+    print(f"boundaries {margin} um from the core:  {names}   ({len(w)} warnings)")'''),
     ("md", r"""**Exercise 3.** Extend the region test above to margins of 2.5 and 3 um."""),
     ("md", r"""## 7. Wavelength dependence: group index and dispersion
 
@@ -221,7 +221,7 @@ plt.tight_layout()'''),
 
 `mode.save("te0.mat")` writes the fields and properties to a `.mat` file, `mode.save("te0.npz")` to a NumPy file; `modes.to_dataframe()` and `res.to_dataframe()` give tables.
 
-If you use an AI coding assistant, point it at `AGENTS.md` in the repository: it is a compact reference of everything in this package, written for exactly that purpose. Whatever the assistant writes, the checks in this tutorial still apply: look at the index profile, check convergence, and check that the walls are far enough away."""),
+If you use an AI coding assistant, point it at `AGENTS.md` in the repository: it is a compact reference of everything in this package, written for exactly that purpose. Whatever the assistant writes, the checks in this tutorial still apply: look at the index profile, check convergence, and check that placing the simulation boundaries farther from the core does not change $n_\\mathrm{eff}$."""),
 ]
 
 S02 = [
@@ -229,12 +229,12 @@ S02 = [
 
 {badge("02_guided_modes.ipynb")}
 
-The two examples from the *S02 Guided Modes* slides, solved with `elec438tools`: a 1 um thick slab and a 2 x 1 um rectangular core, both of index 1.444 in air, at 1.55 um, in a 3 x 4 um region with metal walls. The values on the slides are printed alongside for comparison."""),
+The two examples from the *S02 Guided Modes* slides, solved with `elec438tools`: a 1 um thick slab and a 2 x 1 um rectangular core, both of index 1.444 in air, at 1.55 um, in a 3 x 4 um simulation region with metal boundaries. The values on the slides are printed alongside for comparison."""),
     ("md", howto("02_guided_modes.ipynb")),
     ("code", SETUP),
     ("md", """## Slab: 1 um thick, n = 1.444, uniform in x
 
-On the slides the slab fills the region in $x$, so the metal walls at $x = \\pm 1.5$ um also act on it: modes 2 to 6 have the same vertical profile as mode 1 but vary between the side walls."""),
+On the slides the slab fills the region in $x$, so the metal boundaries at $x = \\pm 1.5$ um also act on it: modes 2 to 6 have the same vertical profile as mode 1 but form standing waves along $x$ between these two boundaries."""),
     ("code", '''sim = et.ModeSolver(region_width=3.0, region_height=4.0, dx=0.02, background="air")
 sim.add(et.Layer(-0.5, 0.5, 1.444))
 slab_modes = sim.solve(1.55, num_modes=8)
@@ -253,7 +253,7 @@ modes'''),
     ("code", '''slides = {"TE0": 1.304020, "TM0": 1.271321, "TE1": 1.176642, "TM1": 1.155666, "TE2": 1.029682}
 for name, ref in slides.items():
     print(f"{name}:  neff {modes[name].neff.real:.6f}   slides {ref:.6f}")'''),
-    ("md", """The warnings say the region of the slides is tight for the higher-order modes: they reach the walls. Enlarging the region shifts their $n_\\mathrm{eff}$ in the 3rd or 4th decimal."""),
+    ("md", """The warnings say that in the slides' region the fields of the higher-order modes have not decayed where the simulation boundaries are placed. Enlarging the region shifts their $n_\\mathrm{eff}$ in the 3rd or 4th decimal place."""),
     ("code", '''modes.plot("E", max_cols=5);'''),
     ("code", '''for name in ("TE0", "TM0"):
     modes[name].plot_fields()

@@ -63,7 +63,7 @@ disp.plot("ng"); disp.plot("D")      # also disp.neff, disp.ng, disp.D arrays, s
 | `Circle(radius, x=0, y=0, material)` | circle |
 | `Material(n)` / `Material(lambda wl: ..., name=...)` | constant or wavelength-dependent index; `et.Si.n(1.55)` returns the index |
 
-### Builders (return a ready `ModeSolver`; walls 1.5 um from the core by default)
+### Builders (return a ready `ModeSolver`; metal boundaries 1.5 um from the core by default)
 - `strip_waveguide(width=0.5, height=0.22, core="Si", substrate="SiO2", cladding="SiO2", sidewall_angle=90, region_width=None, region_height=None, dx=0.02, fine_dx=0.01)`
 - `rib_waveguide(width=0.5, height=0.22, slab_height=0.09, ...)`: ridge on a partially etched slab
 - `slot_waveguide(rail_width=0.175, gap=0.15, height=0.22, ..., fine_dx=0.005)`
@@ -77,8 +77,8 @@ disp.plot("ng"); disp.plot("D")      # also disp.neff, disp.ng, disp.D arrays, s
 - `.add(*shapes)`, `.refine_mesh(x_min, x_max, y_min, y_max, dx, dy=None)`
 - `.plot_index(wavelength=1.55, show_mesh=False, xlim=None, ylim=None)`, `.index(wavelength)` → n array `[ix, iy]`, `.x`, `.y`, `.mesh_info()`
 - `.solve(wavelength=1.55, num_modes=6, n_guess=None, bend_radius=None, group_index=False)` → `ModeSet`
-  - `n_guess`: search near this neff (default: highest index present → fundamental first).
-  - `bend_radius` (um): conformal transformation; centre of curvature at x = center[0] − R; the mode shifts to +x. Gives neff and shape only (no bend loss with metal walls). Make `region_width` large enough.
+  - `n_guess`: the solver returns the modes whose neff is closest to this value (default: highest index present → fundamental first).
+  - `bend_radius` (um): conformal transformation; centre of curvature at x = center[0] − R; the mode shifts to +x. Gives neff and shape only (no bend loss with metal boundaries). Make `region_width` large enough.
   - `group_index=True`: fills `mode.ng` (2 extra solves).
 - `.wavelength_sweep(wavelengths, num_modes=2, n_guess=None)` → `DispersionResult`
 
@@ -101,8 +101,8 @@ disp.plot("ng"); disp.plot("D")      # also disp.neff, disp.ng, disp.D arrays, s
 ## Checks to run before trusting a number (tell the student when you skip one)
 
 1. **Plot the index** (`sim.plot_index()`) and confirm the geometry.
-2. **Guided?** Use only modes with `mode.guided == True`; modes below `n_clad` are modes of the metal box, not of the waveguide. `n_clad` is the highest cladding index at the region's edges; where a slab runs into a side wall (rib waveguides) it is that slab mode's effective index, so rib modes below it (they leak sideways into the slab) count as not guided.
-3. **Walls far enough?** The solver warns when a guided mode has > 1 % of its field next to a wall; enlarge `region_width`/`region_height`. Weakly guided modes near cutoff need the most room.
+2. **Guided?** Use only modes with `mode.guided == True`; modes below `n_clad` are modes of the metal box, not of the waveguide. `n_clad` is the highest cladding index at the region's edges; where a slab extends to the side boundaries (rib waveguides) it is that slab mode's effective index, so rib modes below it (they leak sideways into the slab) count as not guided.
+3. **Boundaries far enough?** The solver warns when a guided mode has > 1 % of its |E|² in a strip along the boundaries (5 % of the region size wide); enlarge `region_width`/`region_height`. Weakly guided modes near cutoff need the most room.
 4. **Mesh converged?** Halve `fine_dx` (or `dx`) and confirm neff changes less than the precision you report. Typical: 10 nm in the core gives neff to ~1e-3 for SOI; 5 nm to ~3e-4.
 5. **Polarization labels** come from `te_fraction`; near a TE/TM crossing in a width sweep the modes hybridise and labels can swap. Look at the fields.
 

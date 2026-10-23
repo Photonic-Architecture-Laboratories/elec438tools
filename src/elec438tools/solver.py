@@ -26,7 +26,7 @@ class ModeSolver:
     center : (x, y) of the centre of the region (um).
     background : material filling everything no structure covers (the cladding).
     boundary : "metal" (perfect electric conductor on all four sides). Fields must decay
-        before reaching it, so keep the walls >= ~1 um away from any high-index core.
+        before reaching it, so place it >= ~1 um from any high-index core.
     subpixel : sub-samples per cell edge used to average the permittivity at interfaces.
 
     Example
@@ -156,10 +156,10 @@ class ModeSolver:
         ----------
         wavelength : vacuum wavelength in um.
         num_modes : number of modes to return.
-        n_guess : search near this effective index.
+        n_guess : the solver returns the modes whose effective index is closest to this value.
         bend_radius : bend radius in um (conformal transformation); the centre of curvature is
             at x = center[0] - bend_radius, so the mode shifts towards +x. neff is referred to
-            the radius at center[0]. Radiation loss of bends is not computed with metal walls.
+            the radius at center[0]. Radiation loss of bends is not computed with metal boundaries.
         group_index : also compute ng = neff - wavelength * dneff/dwavelength for each mode
             (two extra solves at wavelength * (1 +- 1e-3)).
 
@@ -193,7 +193,7 @@ class ModeSolver:
         effective index of the fundamental slab mode of the layer stack at that edge (a
         uniform cladding gives its own index), since a mode below it leaks sideways into
         that slab, as in a rib waveguide. In a bend the transformed material index is used,
-        which grows towards the outer wall."""
+        which grows towards +x (the outside of the bend)."""
         n = self.index(wavelength).real
         ax, ay = self.axes
         if bend_radius:

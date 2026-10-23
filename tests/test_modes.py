@@ -32,7 +32,7 @@ def test_1d_slab_matches_exact_solution(pol):
 
 
 def test_symmetric_slab_s02():
-    """S02: 1 um slab of n = 1.444 in air; first two TE modes (walls far away, as the exact solution assumes)."""
+    """S02: 1 um slab of n = 1.444 in air; first two TE modes (boundaries far away, as the exact solution assumes)."""
     sim = et.slab_waveguide(thickness=1.0, core=1.444, substrate="air", cladding="air", region_height=12.0, dy=0.005)
     modes = sim.solve(1.55, num_modes=4)
     for m in (0, 1):
@@ -41,10 +41,10 @@ def test_symmetric_slab_s02():
 
 
 def test_rectangle_matches_lecture_s02():
-    """S02 slides: 2 x 1 um core of n = 1.444 in air, 3 x 4 um region, metal walls, 1.55 um (values on the slides)."""
+    """S02 slides: 2 x 1 um core of n = 1.444 in air, 3 x 4 um region, metal boundaries, 1.55 um (values on the slides)."""
     sim = et.ModeSolver(region_width=3.0, region_height=4.0, dx=0.02, background="air")
     sim.add(et.Rect(width=2.0, height=1.0, material=1.444))
-    with pytest.warns(UserWarning):  # the slide's region is tight: TE3 touches the walls
+    with pytest.warns(UserWarning):  # the slide's region is tight: TE3 reaches the boundaries
         modes = sim.solve(1.55, num_modes=5)
     slides = {"TE0": 1.304020, "TM0": 1.271321, "TE1": 1.176642, "TM1": 1.155666, "TE2": 1.029682}
     for name, n in slides.items():
@@ -117,7 +117,7 @@ def test_strip_matches_femwell():
 
 
 def test_rib_guided_threshold_is_slab_mode_index():
-    """A rib's slab runs into the side walls: modes are guided only above the slab mode's neff."""
+    """A rib's slab extends to the side boundaries: modes are guided only above the slab mode's neff."""
     slab = et.slab_waveguide(0.09).solve(1.55, num_modes=1)["TE0"].neff.real
     modes = et.rib_waveguide(width=0.5, height=0.22, slab_height=0.09).solve(1.55, num_modes=4)
     assert abs(modes[0].n_clad - slab) < 5e-3
